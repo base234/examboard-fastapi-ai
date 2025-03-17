@@ -1,4 +1,4 @@
-# Examboard Backend
+# Examboard AI (ExGen)
 
 This is the backend of the examboard application.
 
