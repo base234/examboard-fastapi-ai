@@ -1,0 +1,17 @@
+fastapi[standard]
+python-dotenv
+requests
+validators
+black
+pydantic
+uvicorn
+python-dateutil
+openai
+anthropic
+redis
+pydantic-settings
+litellm
+langfuse
+firecrawl-py
+PyMuPDF
+pypdf

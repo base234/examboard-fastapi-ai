@@ -1,0 +1,79 @@
+services:
+  fastapi_app:
+    build: .
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/exgen
+    ports:
+      - "8000:8000"
+    networks:
+      - exgen
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:latest
+    command: --port ${REDIS_PORT} --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    volumes:
+      - exgen-redis:/data
+    networks:
+      - exgen
+
+
+  langfuse-server:
+    image: langfuse/langfuse:2
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    ports:
+      - "4000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@langfuse-db:5432/postgres
+      - NEXTAUTH_SECRET=mysecret
+      - SALT=mysalt
+      - ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
+      - NEXTAUTH_URL=http://localhost:4000
+      - TELEMETRY_ENABLED=true
+      - LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES=false
+      - LANGFUSE_INIT_ORG_ID=123
+      - LANGFUSE_INIT_ORG_NAME=wittypen
+      - LANGFUSE_INIT_PROJECT_ID=456
+      - LANGFUSE_INIT_PROJECT_NAME=exgen
+      - LANGFUSE_INIT_PROJECT_PUBLIC_KEY=789
+      - LANGFUSE_INIT_PROJECT_SECRET_KEY=101
+      - LANGFUSE_INIT_USER_EMAIL=test@test.com
+      - LANGFUSE_INIT_USER_NAME=test
+      - LANGFUSE_INIT_USER_PASSWORD=test@test.com
+    networks:
+      - exgen
+
+  langfuse-db:
+    image: postgres
+    restart: no
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - langfuse-db-data:/var/lib/postgresql/data
+    networks:
+      - exgen
+
+networks:
+  exgen:
+    driver: bridge
+
+volumes:
+  exgen-redis:
+    driver: local
+  langfuse-db-data:
+    driver: local
